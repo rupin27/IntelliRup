@@ -6,6 +6,7 @@ from groq import BaseModel
 from langchain_groq import ChatGroq
 from exa_py import Exa
 from pydantic import Field, BaseModel
+from datetime import datetime
 import json
 
 load_dotenv()
@@ -14,7 +15,7 @@ load_dotenv()
 llm = ChatGroq(
     model="groq/gemma2-9b-it",
     api_key=os.getenv("GROQ_API_KEY"),  # Critical: Add this to authenticate and set provider
-    temperature=0.5,
+    temperature=0.3,
     max_tokens=1024,
     max_retries=2
 )
@@ -47,10 +48,9 @@ class ExaSearchTool(BaseTool):
         try:
             results = exa.search(
                 query=f"{query} site:*.edu | site:*.gov | site:*.org since:2025-01-01",
-                num_results=3,
+                num_results=5,
                 type="hybrid",
-                use_autoprompt=True,
-                text_length=500
+                use_autoprompt=True
             )
             return [
                 {"title": r.title, "url": r.url, "snippet": r.text[:500] + "..." if r.text else f"Visit {r.url} for details"}
@@ -88,7 +88,7 @@ research_agent = Agent(
     llm=llm,
     verbose=True,
     max_iterations=2,
-    max_rpm=20
+    max_rpm=20 
 )
 
 # Analysis Agent: Evaluates threats using LLM
@@ -113,7 +113,8 @@ response_agent = Agent(
 coordinator_agent = Agent(
     role="Threat Response Coordinator",
     goal="Orchestrate the collaboration of research, analysis, and response agents to ensure a cohesive threat response.",
-    backstory="You are a strategic coordinator with expertise in managing AI agents, ensuring tasks are completed efficiently and results are cohesive.",
+    backstory="You compile results into a detailed report with the current date and all threats analyzed.",
     llm=llm,
-    verbose=True
+    verbose=True,
+    prompt_template="Generate a report for {num_threats} threats. Use date: {current_date}. Include executive summary, threat details, risk assessments, and mitigation plans."
 )
