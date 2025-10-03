@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ThreatData } from "@/types/threat";
+import axios from "axios";
 
 interface ThreatAnalyzerProps {
   onAnalysisComplete: (data: {
@@ -19,7 +20,7 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
   const [currentMessage, setCurrentMessage] = useState("");
   const [messageIndex, setMessageIndex] = useState(0);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [isFading, setIsFading] = useState(false); // Control fade animation
+  const [isFading, setIsFading] = useState(false);
 
   const messages = [
     "Research Agent: Gathering threat data...",
@@ -35,6 +36,14 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
     "AI-powered threat detection 2025",
     "phishing trends 2025"
   ];
+
+  // Set up axios defaults when component mounts
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+  }, []);
 
   // Rotate placeholders with animation
   useEffect(() => {
@@ -87,15 +96,12 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
     setIsAnalyzing(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_ENDPOINT}/analyze`,
+        { query }
+      );
 
-      if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-
-      const data = await response.json();
+      const data = response.data;
 
       onAnalysisComplete({
         threats: data.threats,
@@ -107,9 +113,17 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
         description: `Found ${data.threats.length} threats in ${data.executionTime.toFixed(2)}s`,
       });
     } catch (error) {
-      toast.error("Analysis failed", {
-        description: error instanceof Error ? error.message : "Please check your backend connection",
-      });
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.error("Session expired", {
+          description: "Please log in again",
+        });
+        localStorage.removeItem("authToken");
+        window.location.reload();
+      } else {
+        toast.error("Analysis failed", {
+          description: error instanceof Error ? error.message : "Please check your backend connection",
+        });
+      }
       console.error("Analysis error:", error);
     } finally {
       setIsAnalyzing(false);

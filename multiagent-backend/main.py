@@ -1,6 +1,7 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from crewai import Crew
 from agents import research_agent, analysis_agent, response_agent, coordinator_agent
@@ -11,6 +12,9 @@ import logging
 import pandas as pd
 from typing import List, Dict, Optional
 from difflib import SequenceMatcher
+import bcrypt
+import jwt
+from datetime import datetime, timedelta, timezone
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING)
@@ -18,8 +22,14 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# Environment variables
 origins_env = os.getenv("ALLOWED_ORIGINS")
-allowed_origins = [origin.strip() for origin in origins_env.split(",")]
+allowed_origins = [origin.strip() for origin in origins_env.split(",")] if origins_env else []
+JWT_SECRET = os.getenv("JWT_SECRET")
+DASHBOARD_PASSWORD_HASH = bcrypt.hashpw(
+    os.getenv("DASHBOARD_PASSWORD").encode('utf-8'),
+    bcrypt.gensalt()
+).decode('utf-8')
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +38,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# JWT Authentication
+security = HTTPBearer()
+
+def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500)
@@ -42,6 +65,9 @@ class AnalysisResponse(BaseModel):
     threats: List[Threat]
     report: str
     executionTime: float
+
+class LoginRequest(BaseModel):
+    password: str
 
 def parse_json_with_single_quotes(s: str) -> List[Dict]:
     """Safely parse JSON-like string with single quotes."""
@@ -252,7 +278,28 @@ def run_crew(query: str) -> tuple:
     
     return result, execution_time
 
-@app.post("/analyze", response_model=AnalysisResponse)
+@app.post("/login")
+async def login(request: LoginRequest):
+    """Authenticate user and return JWT token."""
+    try:
+        stored_password_hash = DASHBOARD_PASSWORD_HASH.encode('utf-8')
+        if bcrypt.checkpw(request.password.encode('utf-8'), stored_password_hash):
+            token = jwt.encode(
+                {
+                    "sub": "dashboard-user",
+                    "exp": datetime.now(timezone.utc) + timedelta(hours=30)
+                },
+                JWT_SECRET,
+                algorithm="HS256"
+            )
+            return {"token": token}
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
+    except Exception as e:
+        logger.exception(f"Error in login: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Authentication failed")
+
+@app.post("/analyze", response_model=AnalysisResponse, dependencies=[Depends(verify_jwt_token)])
 async def analyze_threats(request: QueryRequest):
     """Analyze cybersecurity threats based on user query."""
     try:
