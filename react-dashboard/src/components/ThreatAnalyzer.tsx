@@ -1,0 +1,145 @@
+import { useState, useEffect } from "react";
+import { Search, Loader2, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { ThreatData } from "@/types/threat";
+
+interface ThreatAnalyzerProps {
+  onAnalysisComplete: (data: {
+    threats: ThreatData[];
+    report: string;
+    executionTime: number;
+  }) => void;
+}
+
+const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
+  const [query, setQuery] = useState("cybersecurity vulnerabilities 2025");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  const messages = [
+    "Research Agent: Gathering threat data...",
+    "Analysis Agent: Evaluating threats...",
+    "Response Agent: Generating mitigation plans...",
+    "Coordinator Agent: Compiling report..."
+  ];
+
+  useEffect(() => {
+    if (isAnalyzing) {
+      setMessageIndex(0);
+      setCurrentMessage(messages[0]);
+
+      const totalDuration = 5000; // 5 seconds
+      const intervalTime = totalDuration / (messages.length - 1); // Time per transition
+
+      let currentIndex = 0;
+      const timer = setInterval(() => {
+        currentIndex += 1;
+        if (currentIndex < messages.length) {
+          setMessageIndex(currentIndex);
+          setCurrentMessage(messages[currentIndex]);
+        } else {
+          clearInterval(timer);
+        }
+      }, intervalTime);
+
+      return () => clearInterval(timer);
+    } else {
+      setCurrentMessage("");
+      setMessageIndex(0);
+    }
+  }, [isAnalyzing]);
+
+  const handleAnalyze = async () => {
+    if (!query.trim()) {
+      toast.error("Please enter a threat query");
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      onAnalysisComplete({
+        threats: data.threats,
+        report: data.report,
+        executionTime: data.executionTime,
+      });
+
+      toast.success("Analysis complete!", {
+        description: `Found ${data.threats.length} threats in ${data.executionTime.toFixed(2)}s`,
+      });
+    } catch (error) {
+      toast.error("Analysis failed", {
+        description: error instanceof Error ? error.message : "Please check your backend connection",
+      });
+      console.error("Analysis error:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <div className="glass-card rounded-2xl p-8 mb-8 shadow-2xl animate-slide-in">
+      <div className="flex items-center gap-3 mb-6">
+        <Search className="w-6 h-6 text-primary" />
+        <h2 className="text-2xl font-bold">Threat Query</h2>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="flex-1 relative group">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
+            placeholder="Enter threat query (e.g., 'cybersecurity vulnerabilities 2025')"
+            className="h-14 text-lg bg-secondary/50 border-primary/30 focus:border-primary transition-all duration-300 group-hover:border-primary/50"
+            disabled={isAnalyzing}
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/20 to-accent/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
+        </div>
+
+        <Button
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+          size="lg"
+          className="h-14 px-8 bg-gradient-to-r from-primary to-destructive hover:opacity-90 transition-all duration-300 glow-red text-lg font-semibold"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Zap className="w-5 h-5 mr-2" />
+              Analyze Threats
+            </>
+          )}
+        </Button>
+      </div>
+
+      {isAnalyzing && (
+        <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground animate-pulse-glow">
+          <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
+          <span>{currentMessage}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ThreatAnalyzer;

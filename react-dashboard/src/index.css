@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Cyber Dark Theme */
+    --background: 229 30% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 229 25% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 229 30% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 0 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 229 20% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 229 20% 18%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 271 91% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 33 100% 56%;
+    --success: 142 71% 45%;
+
+    --border: 229 20% 20%;
+    --input: 229 20% 18%;
+    --ring: 0 85% 60%;
+
+    --radius: 0.75rem;
+
+    /* Custom cyber theme tokens */
+    --cyber-red: 0 85% 60%;
+    --cyber-orange: 33 100% 56%;
+    --cyber-green: 142 71% 45%;
+    --cyber-blue: 217 91% 60%;
+    --cyber-purple: 271 91% 65%;
+    
+    --glow-red: 0 85% 60% / 0.5;
+    --glow-purple: 271 91% 65% / 0.4;
+    --glow-blue: 217 91% 60% / 0.3;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--cyber-red)), hsl(var(--cyber-purple)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--cyber-blue)), hsl(var(--cyber-purple)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--cyber-green)), hsl(var(--cyber-blue)));
+    
+    --shadow-glow-red: 0 0 30px hsl(var(--glow-red)), 0 0 60px hsl(var(--glow-red));
+    --shadow-glow-purple: 0 0 30px hsl(var(--glow-purple)), 0 0 60px hsl(var(--glow-purple));
+    --shadow-card: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply backdrop-blur-xl bg-card/40 border border-white/10;
+  }
+
+  .glow-red {
+    box-shadow: var(--shadow-glow-red);
+  }
+
+  .glow-purple {
+    box-shadow: var(--shadow-glow-purple);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.5s ease-out;
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
