@@ -11,8 +11,10 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  // New state: Controls the post-login loader
+  const [isPostLoginLoading, setIsPostLoginLoading] = useState(false);
 
-  // Validate token on component mount
+  // Validate token on component mount (unchanged)
   useEffect(() => {
     const validateToken = async () => {
       const token = localStorage.getItem("authToken");
@@ -57,7 +59,7 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
     validateToken();
   }, []);
 
-  // Set up axios interceptor to handle 401 responses globally
+  // Set up axios interceptor to handle 401 responses globally (unchanged)
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
@@ -77,6 +79,16 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated && isPostLoginLoading) {
+      const timer = setTimeout(() => {
+        setIsPostLoginLoading(false);
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isPostLoginLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -91,6 +103,7 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
       localStorage.setItem("authToken", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       setIsAuthenticated(true);
+      setIsPostLoginLoading(true);
       setPassword("");
     } catch (err: any) {
       setError(err.response?.data?.detail || "Authentication failed. Please try again.");
@@ -98,13 +111,27 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
     }
   };
 
-  // Show loading state while validating token
+  // Show initial loading state while validating token (unchanged)
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Validating session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // New: Show modern post-login loader after successful login
+  if (isAuthenticated && isPostLoginLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center transition-opacity duration-300 ease-in-out opacity-100">
+          <div className="relative flex items-center justify-center mx-auto mb-4 w-12 h-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary"></div>
+          </div>
+          <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -147,7 +174,12 @@ const PasswordAuth = ({ children }: PasswordAuthProps) => {
     );
   }
 
-  return <>{children}</>;
+  // Render children once post-login loading is complete (with optional fade-in)
+  return (
+    <div className="transition-opacity duration-500 ease-in-out opacity-100">
+      {children}
+    </div>
+  );
 };
 
 export default PasswordAuth;
