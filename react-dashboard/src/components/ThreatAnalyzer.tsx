@@ -14,10 +14,12 @@ interface ThreatAnalyzerProps {
 }
 
 const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
-  const [query, setQuery] = useState("cybersecurity vulnerabilities 2025");
+  const [query, setQuery] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [messageIndex, setMessageIndex] = useState(0);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false); // Control fade animation
 
   const messages = [
     "Research Agent: Gathering threat data...",
@@ -26,13 +28,37 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
     "Coordinator Agent: Compiling report..."
   ];
 
+  const placeholders = [
+    "cybersecurity vulnerabilities 2025",
+    "top ransomware attacks this year",
+    "IoT device security risks",
+    "AI-powered threat detection 2025",
+    "phishing trends 2025"
+  ];
+
+  // Rotate placeholders with animation
+  useEffect(() => {
+    if (!query && !isAnalyzing) {
+      const interval = setInterval(() => {
+        setIsFading(true);
+        setTimeout(() => {
+          setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+          setIsFading(false);
+        }, 500);
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [query, isAnalyzing]);
+
+  // Animate analysis messages
   useEffect(() => {
     if (isAnalyzing) {
       setMessageIndex(0);
       setCurrentMessage(messages[0]);
 
-      const totalDuration = 5000; // 5 seconds
-      const intervalTime = totalDuration / (messages.length - 1); // Time per transition
+      const totalDuration = 5000;
+      const intervalTime = totalDuration / (messages.length - 1);
 
       let currentIndex = 0;
       const timer = setInterval(() => {
@@ -67,9 +93,7 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
         body: JSON.stringify({ query })
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
 
       const data = await response.json();
 
@@ -105,10 +129,19 @@ const ThreatAnalyzer = ({ onAnalysisComplete }: ThreatAnalyzerProps) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-            placeholder="Enter threat query (e.g., 'cybersecurity vulnerabilities 2025')"
-            className="h-14 text-lg bg-secondary/50 border-primary/30 focus:border-primary transition-all duration-300 group-hover:border-primary/50"
+            placeholder=""
+            className="h-14 text-lg bg-secondary/50 border-primary/30 focus:border-primary transition-all duration-300 group-hover:border-primary/50 relative z-10"
             disabled={isAnalyzing}
           />
+          {!query && !isAnalyzing && (
+            <span
+              className={`absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-opacity duration-500 ${
+                isFading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {placeholders[placeholderIndex]}
+            </span>
+          )}
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary/20 to-accent/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
         </div>
 
