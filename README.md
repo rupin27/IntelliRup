@@ -87,6 +87,13 @@ IntelliRup consists of a **frontend dashboard** and a **backend API** with a mul
 * **Deployment**: Hosted on AWS Beanstalk
 * **Authentication Layer**: Only users with valid credentials (password-protected) can access endpoints.
 
+
+### Natural Language Processing (NLP) via Exa
+
+The Research Agent utilizes the **Exa search tool** to perform highly targeted and relevant web searches. The integration leverages **advanced NLP capabilities** in two key ways:
+1.  **Semantic Search**: Exa's search functionality is inherently semantic, allowing the system to understand the *meaning* and *context* of complex cybersecurity queries (e.g., "recent RCE vulnerabilities in cloud software") rather than relying on simple keyword matching.
+2.  **Contextual Extraction**: The agent uses the search results (snippets, titles, and content) as input for the large language model (via Groq). The LLM then applies sophisticated NLP techniques to **extract, summarize, and structure** the raw text into actionable, standardized threat intelligence data, which the Analysis and Response agents can process.
+
 ---
 
 ## Project Structure
