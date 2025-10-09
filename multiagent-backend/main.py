@@ -107,10 +107,10 @@ def normalize_risk_level(risk: str) -> str:
     risk_lower = risk.lower().strip()
     
     risk_map = {
-        'critical': 'Critical',
-        'severe': 'Critical',
-        'urgent': 'Critical',
-        'emergency': 'Critical',
+        'critical': 'High',
+        'severe': 'High',
+        'urgent': 'High',
+        'emergency': 'High',
         'high': 'High',
         'elevated': 'High',
         'serious': 'High',

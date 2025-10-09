@@ -13,8 +13,8 @@ load_dotenv()
 
 # Initialize LLM (Groq) - Added api_key
 llm = ChatGroq(
-    model="groq/gemma2-9b-it",
-    api_key=os.getenv("GROQ_API_KEY"),  # Critical: Add this to authenticate and set provider
+    model=os.getenv("AI_MODEL"),
+    api_key=os.getenv("GROQ_API_KEY"),
     temperature=0.3,
     max_tokens=1024,
     max_retries=2
