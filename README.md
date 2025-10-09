@@ -27,7 +27,7 @@
 ## Deployment
 
 * **Frontend**: Hosted on **Vercel** ([https://intellirup.vercel.app/](https://intellirup.vercel.app/))
-* **Backend API**: Hosted on **Render** ([https://intellirup.onrender.com](https://intellirup.onrender.com))
+* **Backend API**: Hosted on Elastic Beanstalk
 * **Authentication**: Only verified users with passwords can access the system. Unauthorized requests are blocked.
 
 ---
@@ -84,7 +84,7 @@ IntelliRup consists of a **frontend dashboard** and a **backend API** with a mul
 * **Framework**: FastAPI, serving endpoints like `/analyze` and `/health`.
 * **Multi-Agent System**: CrewAI with Research, Analysis, Response, and Coordinator agents.
 * **Dependencies**: `crewai`, `langchain_groq`, `exa_py`, `pandas`, `fastapi`, `pydantic`.
-* **Deployment**: Hosted on **Render**.
+* **Deployment**: Hosted on AWS Beanstalk
 * **Authentication Layer**: Only users with valid credentials (password-protected) can access endpoints.
 
 ---
